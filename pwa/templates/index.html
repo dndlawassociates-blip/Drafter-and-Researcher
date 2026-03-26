@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#667eea">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="D&D Drafter">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <title>D&D Drafter & Researcher</title>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>D&D Drafter & Researcher</h1>
+  <div class="subtitle">Advocates DEEPAK ARAVIND.K | DEEPTHI.G &bull; Visakhapatnam</div>
+</div>
+
+<!-- API Key Bar -->
+<div class="settings-bar">
+  <input type="password" id="api-key-input" class="key-input" placeholder="Anthropic API Key (sk-ant-...)" onchange="App.saveApiKey()">
+  <span id="key-status" class="key-status">○</span>
+</div>
+
+<!-- ═══════════════════════════════ HOME ═══════════════════════════════ -->
+<div id="page-home" class="page active">
+  <div class="stat-row">
+    <div class="stat-card"><div class="num">30+</div><div class="lbl">Templates</div></div>
+    <div class="stat-card"><div class="num">31</div><div class="lbl">Statutes</div></div>
+    <div class="stat-card"><div class="num">40+</div><div class="lbl">Limitation</div></div>
+    <div class="stat-card"><div class="num">340+</div><div class="lbl">Provisions</div></div>
+  </div>
+
+  <div class="section-header">AI-Powered</div>
+  <div class="action-grid">
+    <div class="action-btn" onclick="App.navigate('draft')">
+      <div class="icon">&#x1F4DD;</div>
+      <div class="label">AI Drafter</div>
+      <div class="desc">Draft any document</div>
+    </div>
+    <div class="action-btn" onclick="App.navigate('research')">
+      <div class="icon">&#x1F50D;</div>
+      <div class="label">AI Research</div>
+      <div class="desc">Legal questions</div>
+    </div>
+    <div class="action-btn" onclick="App.navigate('analyze')">
+      <div class="icon">&#x2696;</div>
+      <div class="label">Case Analyzer</div>
+      <div class="desc">Strategy & strength</div>
+    </div>
+    <div class="action-btn" onclick="App.navigate('review')">
+      <div class="icon">&#x2705;</div>
+      <div class="label">Draft Review</div>
+      <div class="desc">10-point check</div>
+    </div>
+  </div>
+
+  <div class="section-header">Quick Tools</div>
+  <div class="action-grid">
+    <div class="action-btn" onclick="App.navigate('limitation')">
+      <div class="icon">&#x23F0;</div>
+      <div class="label">Limitation</div>
+      <div class="desc">Check time bar</div>
+    </div>
+    <div class="action-btn" onclick="App.navigate('courtfee')">
+      <div class="icon">&#x1F4B0;</div>
+      <div class="label">Court Fee</div>
+      <div class="desc">AP fee calculator</div>
+    </div>
+    <div class="action-btn" onclick="App.navigate('jurisdiction')">
+      <div class="icon">&#x1F3DB;</div>
+      <div class="label">Jurisdiction</div>
+      <div class="desc">Correct court</div>
+    </div>
+    <div class="action-btn" onclick="App.navigate('amount')">
+      <div class="icon">&#x1F4B1;</div>
+      <div class="label">Amount</div>
+      <div class="desc">Indian format</div>
+    </div>
+  </div>
+
+  <div class="section-header">Reference</div>
+  <div class="action-grid">
+    <div class="action-btn" onclick="App.navigate('statutes')">
+      <div class="icon">&#x1F4DA;</div>
+      <div class="label">Statutes</div>
+      <div class="desc">31 statutes</div>
+    </div>
+    <div class="action-btn" onclick="App.navigate('mapping')">
+      <div class="icon">&#x1F504;</div>
+      <div class="label">IPC → BNS</div>
+      <div class="desc">Old → New law</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;text-align:center;font-size:12px;color:var(--text-light)">
+    D&D Law Associates &bull; Door No. 49-20-5/c, Lalithanagar, Visakhapatnam-16<br>
+    dndlawassociates@gmail.com &bull; 7382398999
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ AI DRAFTER ═══════════════════════════════ -->
+<div id="page-draft" class="page">
+  <div class="section-header">AI Drafter</div>
+  <div class="section-desc">Select document type, fill details, Claude drafts it.</div>
+
+  <div class="form-group">
+    <label class="form-label">Document Type</label>
+    <select id="draft-type" class="form-select">
+      <optgroup label="Civil">
+        <option>Plaint (Civil Suit)</option><option>Written Statement</option>
+        <option>Partition Suit</option><option>Declaration Suit</option>
+        <option>Injunction Suit</option><option>Execution Petition</option>
+        <option>Caveat Petition</option><option>IA (Interim Application)</option>
+      </optgroup>
+      <optgroup label="Criminal">
+        <option>Bail Application</option><option>Anticipatory Bail</option>
+        <option>Cheque Bounce (138 NI Act)</option><option>Quash Petition (528 BNSS)</option>
+      </optgroup>
+      <optgroup label="Family">
+        <option>Divorce Petition</option><option>Maintenance Application</option>
+        <option>DV Act Application</option><option>Custody Petition</option><option>RCR Petition</option>
+      </optgroup>
+      <optgroup label="Consumer / RERA">
+        <option>Consumer Complaint (CPA 2019)</option><option>RERA Complaint</option>
+      </optgroup>
+      <optgroup label="Notices">
+        <option>Legal Notice</option><option>Reply to Legal Notice</option>
+        <option>Cheque Bounce Notice</option><option>Eviction Notice</option>
+      </optgroup>
+      <optgroup label="Appeals">
+        <option>Civil Appeal (First Appeal)</option><option>Criminal Appeal</option>
+        <option>Revision Petition</option><option>Second Appeal</option>
+      </optgroup>
+      <optgroup label="Special">
+        <option>Writ Petition (Art 226)</option><option>MACT Claim</option>
+        <option>DRT Application</option><option>Arbitration Application</option>
+        <option>Affidavit</option><option>Vakalatnama</option><option>Letter to Client</option>
+      </optgroup>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Court / Forum</label>
+    <input id="draft-court" class="form-input" placeholder="e.g., Senior Civil Judge Court, Visakhapatnam">
+  </div>
+  <div class="form-group">
+    <label class="form-label">Parties</label>
+    <textarea id="draft-parties" class="form-textarea" rows="3" placeholder="Plaintiff: Name, age, address&#10;Defendant: Name, age, address"></textarea>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Case Facts (be detailed)</label>
+    <textarea id="draft-facts" class="form-textarea" rows="6" placeholder="Describe facts chronologically with dates, amounts, events..."></textarea>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Relief Sought</label>
+    <textarea id="draft-relief" class="form-textarea" rows="3" placeholder="What relief do you want?"></textarea>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Additional Instructions (optional)</label>
+    <textarea id="draft-additional" class="form-textarea" rows="2" placeholder="Specific sections, interim relief, etc."></textarea>
+  </div>
+  <button class="btn btn-primary" onclick="App.draft()">&#x1F4DD; Draft with Claude</button>
+  <div id="draft-spinner" style="display:none"></div>
+  <div id="draft-result"></div>
+</div>
+
+<!-- ═══════════════════════════════ AI RESEARCHER ═══════════════════════════════ -->
+<div id="page-research" class="page">
+  <div class="section-header">AI Researcher</div>
+  <div class="section-desc">Ask any legal question — get sections, case law, procedure.</div>
+
+  <div class="form-group">
+    <label class="form-label">Research Type</label>
+    <select id="research-type" class="form-select">
+      <option>General Legal Question</option>
+      <option>Find Applicable Sections</option>
+      <option>Case Law on a Topic</option>
+      <option>Compare Old Law vs New Law</option>
+      <option>Procedure for Filing</option>
+      <option>Limitation Period Query</option>
+      <option>Jurisdiction Question</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Your Legal Question</label>
+    <textarea id="research-query" class="form-textarea" rows="5" placeholder="e.g., What are the grounds for anticipatory bail under BNSS?"></textarea>
+  </div>
+  <button class="btn btn-primary" onclick="App.research()">&#x1F50D; Research with Claude</button>
+  <div id="research-spinner" style="display:none"></div>
+  <div id="research-result"></div>
+</div>
+
+<!-- ═══════════════════════════════ CASE ANALYZER ═══════════════════════════════ -->
+<div id="page-analyze" class="page">
+  <div class="section-header">Case Analyzer</div>
+  <div class="section-desc">Describe the case — get strength rating, strategy, action plan.</div>
+
+  <div class="form-group">
+    <label class="form-label">Our Client is</label>
+    <select id="analyze-side" class="form-select">
+      <option>Plaintiff / Complainant / Petitioner</option>
+      <option>Defendant / Respondent / Accused</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Case Type</label>
+    <select id="analyze-type" class="form-select">
+      <option>Civil Dispute</option><option>Criminal Matter</option>
+      <option>Family / Matrimonial</option><option>Consumer Complaint</option>
+      <option>Property Dispute</option><option>Cheque Bounce (138 NI)</option>
+      <option>Motor Accident</option><option>Banking / DRT</option>
+      <option>RERA / Real Estate</option><option>Labour / Employment</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Complete Case Facts</label>
+    <textarea id="analyze-facts" class="form-textarea" rows="6" placeholder="All facts: what happened, when, amounts, documents available..."></textarea>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Opposing Party's Position (optional)</label>
+    <textarea id="analyze-opponent" class="form-textarea" rows="3" placeholder="What is the other side claiming?"></textarea>
+  </div>
+  <button class="btn btn-primary" onclick="App.analyze()">&#x2696; Analyze Case</button>
+  <div id="analyze-spinner" style="display:none"></div>
+  <div id="analyze-result"></div>
+</div>
+
+<!-- ═══════════════════════════════ DRAFT REVIEW ═══════════════════════════════ -->
+<div id="page-review" class="page">
+  <div class="section-header">Draft Review</div>
+  <div class="section-desc">Paste any draft — get 10-point senior advocate scrutiny.</div>
+
+  <div class="form-group">
+    <label class="form-label">Document Type</label>
+    <select id="review-type" class="form-select">
+      <option>Plaint</option><option>Written Statement</option><option>Legal Notice</option>
+      <option>Reply Notice</option><option>Bail Application</option><option>Consumer Complaint</option>
+      <option>Divorce Petition</option><option>Appeal</option><option>Writ Petition</option>
+      <option>IA Application</option><option>Affidavit</option><option>Execution Petition</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Paste Your Draft</label>
+    <textarea id="review-draft" class="form-textarea" rows="8" placeholder="Paste the complete draft here..."></textarea>
+  </div>
+  <button class="btn btn-primary" onclick="App.reviewDraft()">&#x2705; Review Draft</button>
+  <div id="review-spinner" style="display:none"></div>
+  <div id="review-result"></div>
+</div>
+
+<!-- ═══════════════════════════════ LIMITATION ═══════════════════════════════ -->
+<div id="page-limitation" class="page">
+  <div class="section-header">Limitation Calculator</div>
+  <div class="section-desc">Check if your case is within time — 40+ articles.</div>
+
+  <div class="form-group">
+    <label class="form-label">Case / Suit Type</label>
+    <select id="lim-article" class="form-select">
+      <optgroup label="Civil Suits">
+        <option value="58">Declaration (Section 34 SRA) — 3 years</option>
+        <option value="54">Specific Performance — 3 years</option>
+        <option value="55">Breach of Contract — 3 years</option>
+        <option value="recovery_money">Recovery of Money — 3 years</option>
+        <option value="65">Compensation for Tort — 3 years</option>
+        <option value="59">Possession (Title) — 12 years</option>
+        <option value="injunction_permanent">Permanent Injunction — 3 years</option>
+        <option value="partition">Partition — 12 years</option>
+        <option value="113">Residuary (no specific article) — 3 years</option>
+      </optgroup>
+      <optgroup label="Appeals">
+        <option value="115">First Appeal — 90 days</option>
+        <option value="116">Second Appeal — 90 days</option>
+        <option value="117">Appeal from Order — 30 days</option>
+      </optgroup>
+      <optgroup label="Criminal">
+        <option value="131">Criminal Revision — 90 days</option>
+        <option value="132">Criminal Appeal — 30 days</option>
+      </optgroup>
+      <optgroup label="Cheque Bounce (NI Act)">
+        <option value="ni_138_notice">Send Notice — 30 days from return memo</option>
+        <option value="ni_138_complaint">File Complaint — 30 days after notice</option>
+      </optgroup>
+      <optgroup label="Consumer">
+        <option value="consumer_complaint">Consumer Complaint — 2 years</option>
+        <option value="consumer_appeal">Consumer Appeal — 30 days</option>
+      </optgroup>
+      <optgroup label="Banking / DRT">
+        <option value="drt_oa">DRT Application — 3 years</option>
+        <option value="sarfaesi_challenge">SARFAESI Challenge — 45 days</option>
+      </optgroup>
+      <optgroup label="Others">
+        <option value="mact_166">Motor Accident (MACT) — 6 months</option>
+        <option value="rera_complaint">RERA Complaint — 3 years</option>
+        <option value="arb_34">Challenge Arbitral Award — 3 months</option>
+        <option value="execution">Execution of Decree — 12 years</option>
+        <option value="ibc_application">IBC Application — 3 years</option>
+      </optgroup>
+      <optgroup label="Family (No Limitation)">
+        <option value="divorce">Divorce — No limitation</option>
+        <option value="maintenance_125">Maintenance — No limitation</option>
+        <option value="dv_act">DV Act — No limitation</option>
+        <option value="custody">Custody — No limitation</option>
+      </optgroup>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Date of Cause of Action</label>
+    <input id="lim-date" type="date" class="form-input">
+  </div>
+  <button class="btn btn-primary" onclick="App.calcLimitation()">&#x23F0; Check Limitation</button>
+  <div id="lim-result" style="margin-top:12px"></div>
+</div>
+
+<!-- ═══════════════════════════════ COURT FEE ═══════════════════════════════ -->
+<div id="page-courtfee" class="page">
+  <div class="section-header">Court Fee Calculator</div>
+  <div class="section-desc">AP court fee for civil suits, appeals, IAs, family, consumer, DRT.</div>
+
+  <div class="form-group">
+    <label class="form-label">Category</label>
+    <select id="fee-category" class="form-select">
+      <option value="civil">Civil Suit</option>
+      <option value="appeal">Appeal</option>
+      <option value="ia">Interlocutory Application</option>
+      <option value="family">Family Court</option>
+      <option value="consumer">Consumer Forum</option>
+      <option value="drt">DRT</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Suit / Petition Type</label>
+    <select id="fee-type" class="form-select">
+      <option value="money">Money Suit / Recovery</option>
+      <option value="property">Property Suit</option>
+      <option value="injunction">Injunction</option>
+      <option value="declaration">Declaration</option>
+      <option value="partition">Partition</option>
+      <option value="specific_performance">Specific Performance</option>
+      <option value="first_appeal">First Appeal</option>
+      <option value="second_appeal">Second Appeal</option>
+      <option value="revision">Revision</option>
+      <option value="general">General IA</option>
+      <option value="divorce">Divorce</option>
+      <option value="maintenance">Maintenance</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Suit / Claim Value (Rs.)</label>
+    <input id="fee-value" type="number" class="form-input" placeholder="e.g., 500000" value="500000">
+  </div>
+  <button class="btn btn-primary" onclick="App.calcFee()">&#x1F4B0; Calculate Fee</button>
+  <div id="fee-result" style="margin-top:12px"></div>
+</div>
+
+<!-- ═══════════════════════════════ JURISDICTION ═══════════════════════════════ -->
+<div id="page-jurisdiction" class="page">
+  <div class="section-header">Jurisdiction Check</div>
+  <div class="section-desc">Find the correct court for your case.</div>
+
+  <div class="form-group">
+    <label class="form-label">Case Type</label>
+    <select id="jur-type" class="form-select">
+      <option value="civil">Civil</option><option value="criminal">Criminal</option>
+      <option value="family">Family</option><option value="consumer">Consumer</option>
+      <option value="drt">DRT / Banking</option><option value="motor_accident">Motor Accident</option>
+      <option value="rera">RERA / Real Estate</option><option value="commercial">Commercial</option>
+      <option value="cheque_bounce">Cheque Bounce (138 NI)</option><option value="ibc">IBC / NCLT</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Suit / Claim Value (Rs.)</label>
+    <input id="jur-value" type="number" class="form-input" value="500000">
+  </div>
+  <div class="form-group">
+    <label class="form-label">Location</label>
+    <input id="jur-location" class="form-input" value="Visakhapatnam">
+  </div>
+  <button class="btn btn-primary" onclick="App.checkJurisdiction()">&#x1F3DB; Check Jurisdiction</button>
+  <div id="jur-result" style="margin-top:12px"></div>
+</div>
+
+<!-- ═══════════════════════════════ AMOUNT ═══════════════════════════════ -->
+<div id="page-amount" class="page">
+  <div class="section-header">Amount Converter</div>
+  <div class="section-desc">Convert to Indian legal format (Lakhs / Crores).</div>
+
+  <div class="form-group">
+    <label class="form-label">Enter Amount (Rs.)</label>
+    <input id="amount-input" type="number" class="form-input" placeholder="e.g., 5000000" value="500000">
+  </div>
+  <button class="btn btn-primary" onclick="App.convertAmount()">&#x1F4B1; Convert</button>
+  <div id="amount-result" style="margin-top:12px"></div>
+
+  <div class="section-header" style="margin-top:24px">Quick Reference</div>
+  <div class="card">
+    <div class="provision-item"><strong>1,00,000</strong> → Rs.1,00,000/- (One Lakh)</div>
+    <div class="provision-item"><strong>5,00,000</strong> → Rs.5,00,000/- (Five Lakhs)</div>
+    <div class="provision-item"><strong>10,00,000</strong> → Rs.10,00,000/- (Ten Lakhs)</div>
+    <div class="provision-item"><strong>25,00,000</strong> → Rs.25,00,000/- (Twenty Five Lakhs)</div>
+    <div class="provision-item"><strong>50,00,000</strong> → Rs.50,00,000/- (Fifty Lakhs)</div>
+    <div class="provision-item"><strong>1,00,00,000</strong> → Rs.1,00,00,000/- (One Crore)</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ STATUTES ═══════════════════════════════ -->
+<div id="page-statutes" class="page">
+  <div class="section-header">Statute Reference</div>
+  <div class="section-desc">31 statutes, 340+ key provisions.</div>
+  <div class="form-group">
+    <input id="statute-search" class="form-input" placeholder="Search provisions... (e.g., bail, injunction)" oninput="App.searchStatutes(this.value)">
+  </div>
+  <div id="statute-list"></div>
+</div>
+
+<!-- ═══════════════════════════════ IPC → BNS MAPPING ═══════════════════════════════ -->
+<div id="page-mapping" class="page">
+  <div class="section-header">IPC → BNS Mapping</div>
+  <div class="section-desc">Old criminal law → New law (2023).</div>
+
+  <div class="card">
+    <div class="card-title">IPC → BNS</div>
+    <div id="ipc-bns-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">CrPC → BNSS</div>
+    <div id="crpc-bnss-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SETTINGS ═══════════════════════════════ -->
+<div id="page-settings" class="page">
+  <div class="section-header">Settings</div>
+  <div class="card">
+    <div class="card-title">Anthropic API Key</div>
+    <div class="card-subtitle">Required for AI Drafter, Researcher, Case Analyzer, Draft Review</div>
+    <div class="form-group">
+      <input type="password" id="settings-api-key" class="form-input" placeholder="sk-ant-api03-..." onchange="document.getElementById('api-key-input').value=this.value;App.saveApiKey()">
+    </div>
+    <div class="card-subtitle">Get your key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--primary)">console.anthropic.com</a></div>
+  </div>
+  <div class="card">
+    <div class="card-title">D&D Law Associates</div>
+    <div class="provision-item">Advocates: DEEPAK ARAVIND.K | DEEPTHI.G</div>
+    <div class="provision-item">Door No. 49-20-5/c, Lalithanagar, R.K. Nagar</div>
+    <div class="provision-item">Opp Roshni Residency, Visakhapatnam-16, AP</div>
+    <div class="provision-item">Email: dndlawassociates@gmail.com</div>
+    <div class="provision-item">Mobile: 7382398999</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Install as App</div>
+    <div class="card-subtitle"><strong>iPhone/iPad:</strong> Tap Share → "Add to Home Screen"</div>
+    <div class="card-subtitle"><strong>Android:</strong> Tap Menu (⋮) → "Add to Home Screen"</div>
+    <div class="card-subtitle"><strong>Mac/PC:</strong> Click Install icon in address bar</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ BOTTOM NAV ═══════════════════════════════ -->
+<nav class="bottom-nav">
+  <a href="#" data-page="home" class="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </a>
+  <a href="#" data-page="draft">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Draft
+  </a>
+  <a href="#" data-page="research">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Research
+  </a>
+  <a href="#" data-page="limitation">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Tools
+  </a>
+  <a href="#" data-page="settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    Settings
+  </a>
+</nav>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script src="/static/js/app.js"></script>
+<script>
+// Load statutes and mappings on page load
+fetch('/api/ipc-bns').then(r=>r.json()).then(data => {
+  const el = document.getElementById('ipc-bns-list');
+  if(el) el.innerHTML = Object.entries(data).map(([k,v]) =>
+    `<div class="mapping-row"><div class="mapping-old">${k}</div><div class="mapping-arrow">→</div><div class="mapping-new">${v}</div></div>`
+  ).join('');
+});
+fetch('/api/crpc-bnss').then(r=>r.json()).then(data => {
+  const el = document.getElementById('crpc-bnss-list');
+  if(el) el.innerHTML = Object.entries(data).map(([k,v]) =>
+    `<div class="mapping-row"><div class="mapping-old">${k}</div><div class="mapping-arrow">→</div><div class="mapping-new">${v}</div></div>`
+  ).join('');
+});
+
+// Statute search
+App.searchStatutes = function(q) {
+  const el = document.getElementById('statute-list');
+  if (!q || q.length < 2) {
+    fetch('/api/statutes').then(r=>r.json()).then(data => {
+      el.innerHTML = Object.entries(data).map(([k,v]) =>
+        `<div class="card" onclick="App.loadStatute('${k}')" style="cursor:pointer">
+          <div class="card-title">${k}</div>
+          <div class="card-subtitle">${v.full_name} (${v.module}) &bull; ${v.provision_count} provisions</div>
+        </div>`
+      ).join('');
+    });
+    return;
+  }
+  fetch('/api/provisions/search?q='+encodeURIComponent(q)).then(r=>r.json()).then(data => {
+    if(!data.length) { el.innerHTML = '<div class="card">No provisions found</div>'; return; }
+    el.innerHTML = data.map(p =>
+      `<div class="provision-item"><span class="provision-section">${p.statute} — ${p.provision}</span><br>${p.description}</div>`
+    ).join('');
+  });
+};
+
+App.loadStatute = function(name) {
+  fetch('/api/statutes/'+name).then(r=>r.json()).then(data => {
+    const el = document.getElementById('statute-list');
+    if(data.error) { el.innerHTML = `<div class="badge badge-danger">${data.error}</div>`; return; }
+    let html = `<button class="btn btn-secondary" onclick="App.searchStatutes('')" style="margin-bottom:12px">← Back to all statutes</button>`;
+    html += `<div class="card"><div class="card-title">${data.statute}</div><div class="card-subtitle">${data.full_name} (${data.module})</div>`;
+    Object.entries(data.provisions).forEach(([k,v]) => {
+      html += `<div class="provision-item"><span class="provision-section">${k}</span> — ${v}</div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  });
+};
+
+// Initial load
+setTimeout(() => App.searchStatutes(''), 500);
+</script>
+
+</body>
+</html>
