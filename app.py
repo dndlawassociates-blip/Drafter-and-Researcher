@@ -24,6 +24,7 @@ from core.prompt_engine import (
     PROMPTS, PROMPT_CATEGORIES, list_prompts, get_prompt, fill_prompt, FIRM_HEADER
 )
 from core.researcher import search_indian_kanoon, format_research_results
+from core.claude_client import draft_document, research_query, analyze_case, review_draft
 
 
 # ─── Page Config ───
@@ -102,12 +103,25 @@ with st.sidebar:
     st.markdown("Visakhapatnam, AP")
     st.markdown("---")
 
+    # API Key input
+    api_key = st.text_input("Anthropic API Key", type="password", placeholder="sk-ant-...")
+    if api_key:
+        st.session_state["api_key"] = api_key
+        st.success("API key set")
+    elif "api_key" in st.session_state:
+        api_key = st.session_state["api_key"]
+
+    st.markdown("---")
+
     page = st.radio(
         "Navigation",
         [
             "Home",
+            "AI Drafter",
+            "AI Researcher",
+            "AI Case Analyzer",
+            "AI Draft Review",
             "Legal Drafter",
-            "Legal Researcher",
             "Limitation Calculator",
             "Court Fee Calculator",
             "Jurisdiction Check",
@@ -115,6 +129,7 @@ with st.sidebar:
             "Statute Reference",
             "IPC to BNS Mapping",
             "Prompt Library",
+            "Legal Researcher",
         ],
         index=0
     )
@@ -179,7 +194,195 @@ if page == "Home":
 
 
 # ═══════════════════════════════════════════════
-# LEGAL DRAFTER
+# AI DRAFTER (Claude-powered)
+# ═══════════════════════════════════════════════
+elif page == "AI Drafter":
+    st.markdown("## AI Drafter — Claude-Powered")
+    st.markdown("Select a document type, fill in details, and Claude drafts it for you.")
+
+    if not api_key:
+        st.warning("Enter your Anthropic API key in the sidebar to use AI features.")
+    else:
+        # Document type selection
+        doc_categories = {
+            "Civil": ["Plaint (Civil Suit)", "Written Statement", "Partition Suit", "Declaration Suit",
+                      "Injunction Suit", "Execution Petition", "Caveat Petition", "IA (Interim Application)"],
+            "Criminal": ["Bail Application", "Cheque Bounce (138 NI Act)", "Quash Petition (528 BNSS)"],
+            "Family": ["Divorce Petition", "Maintenance Application", "DV Act Application", "Custody Petition"],
+            "Consumer": ["Consumer Complaint (CPA 2019)", "RERA Complaint"],
+            "Notices": ["Legal Notice", "Reply to Legal Notice", "Cheque Bounce Notice"],
+            "Appeals": ["Civil Appeal", "Criminal Appeal", "Revision Petition"],
+            "Others": ["Writ Petition (Art 226)", "MACT Claim", "DRT Application", "Arbitration Application",
+                       "Affidavit", "Vakalatnama", "Letter to Client"],
+        }
+
+        col1, col2 = st.columns(2)
+        with col1:
+            category = st.selectbox("Category", list(doc_categories.keys()))
+        with col2:
+            doc_type = st.selectbox("Document Type", doc_categories[category])
+
+        st.markdown("### Case Details")
+        court = st.text_input("Court / Forum", placeholder="e.g., Senior Civil Judge Court, Visakhapatnam")
+        parties = st.text_area("Parties (Plaintiff/Petitioner vs Defendant/Respondent)", height=80,
+                              placeholder="Plaintiff: Name, age, occupation, address\nDefendant: Name, age, occupation, address")
+        facts = st.text_area("Case Facts (be detailed — dates, amounts, events)", height=200,
+                            placeholder="Describe the complete facts chronologically with specific dates, amounts, and events...")
+        relief = st.text_area("Relief / Demand Sought", height=80,
+                             placeholder="What do you want the court to grant?")
+
+        additional = st.text_area("Additional Instructions (optional)", height=80,
+                                 placeholder="Any specific instructions, sections to cite, interim relief needed, etc.")
+
+        if st.button("Draft with Claude", type="primary", use_container_width=True):
+            if not facts.strip():
+                st.error("Please enter the case facts.")
+            else:
+                prompt = f"""Draft a {doc_type} for filing.
+
+COURT: {court or '[To be filled]'}
+PARTIES: {parties or '[To be filled]'}
+
+FACTS:
+{facts}
+
+RELIEF SOUGHT:
+{relief or '[To be specified]'}
+
+ADDITIONAL INSTRUCTIONS:
+{additional or 'None'}
+
+Generate the COMPLETE document ready for filing — from cause title to signature block."""
+
+                with st.spinner("Claude is drafting your document..."):
+                    result = draft_document(api_key, prompt)
+
+                if result.startswith("ERROR:"):
+                    st.error(result)
+                else:
+                    st.markdown("### Generated Draft")
+                    st.markdown(result)
+                    st.download_button("Download as Text", result, file_name=f"{doc_type.replace(' ', '_')}.txt",
+                                      mime="text/plain", use_container_width=True)
+
+
+# ═══════════════════════════════════════════════
+# AI RESEARCHER (Claude-powered)
+# ═══════════════════════════════════════════════
+elif page == "AI Researcher":
+    st.markdown("## AI Researcher — Claude-Powered")
+    st.markdown("Ask any legal question and get a detailed research response.")
+
+    if not api_key:
+        st.warning("Enter your Anthropic API key in the sidebar to use AI features.")
+    else:
+        research_type = st.selectbox("Research Type", [
+            "General Legal Question",
+            "Find Applicable Sections",
+            "Case Law on a Topic",
+            "Compare Old Law vs New Law (IPC/BNS)",
+            "Procedure for Filing",
+            "Limitation Period Query",
+            "Jurisdiction Question",
+            "Contract/Agreement Review Question",
+        ])
+
+        query = st.text_area("Your Legal Question", height=150,
+                            placeholder="e.g., What are the grounds for anticipatory bail under BNSS? What is the procedure for executing a money decree in AP?")
+
+        if st.button("Research with Claude", type="primary", use_container_width=True):
+            if not query.strip():
+                st.error("Please enter your legal question.")
+            else:
+                full_query = f"[{research_type}]\n\n{query}"
+                with st.spinner("Claude is researching..."):
+                    result = research_query(api_key, full_query)
+
+                if result.startswith("ERROR:"):
+                    st.error(result)
+                else:
+                    st.markdown("### Research Results")
+                    st.markdown(result)
+
+
+# ═══════════════════════════════════════════════
+# AI CASE ANALYZER (Claude-powered)
+# ═══════════════════════════════════════════════
+elif page == "AI Case Analyzer":
+    st.markdown("## AI Case Analyzer — Claude-Powered")
+    st.markdown("Describe your case and get a senior advocate's strategic analysis.")
+
+    if not api_key:
+        st.warning("Enter your Anthropic API key in the sidebar to use AI features.")
+    else:
+        client_side = st.selectbox("Our Client is the", ["Plaintiff / Complainant / Petitioner", "Defendant / Respondent / Accused"])
+        case_type = st.selectbox("Case Type", ["Civil Dispute", "Criminal Matter", "Family/Matrimonial", "Consumer Complaint",
+                                                "Property Dispute", "Cheque Bounce", "Motor Accident", "Banking/DRT",
+                                                "RERA/Real Estate", "Labour/Employment", "Other"])
+
+        facts = st.text_area("Complete Case Facts", height=250,
+                            placeholder="Describe ALL facts in detail:\n- What happened, when, where\n- Parties involved\n- Amounts involved\n- Any notices/complaints already filed\n- Documents available\n- What the other side is saying")
+
+        opponent = st.text_area("Opposing Party's Position (if known)", height=100,
+                               placeholder="What is the other side claiming? Any defense they have?")
+
+        if st.button("Analyze Case", type="primary", use_container_width=True):
+            if not facts.strip():
+                st.error("Please enter the case facts.")
+            else:
+                full_facts = f"""CLIENT POSITION: {client_side}
+CASE TYPE: {case_type}
+
+FACTS:
+{facts}
+
+OPPOSING POSITION:
+{opponent or 'Not known yet'}"""
+
+                with st.spinner("Senior advocate analyzing your case..."):
+                    result = analyze_case(api_key, full_facts)
+
+                if result.startswith("ERROR:"):
+                    st.error(result)
+                else:
+                    st.markdown("### Case Analysis")
+                    st.markdown(result)
+
+
+# ═══════════════════════════════════════════════
+# AI DRAFT REVIEW (Claude-powered)
+# ═══════════════════════════════════════════════
+elif page == "AI Draft Review":
+    st.markdown("## AI Draft Review — Claude-Powered")
+    st.markdown("Paste any legal draft and get a senior advocate's quality review.")
+
+    if not api_key:
+        st.warning("Enter your Anthropic API key in the sidebar to use AI features.")
+    else:
+        doc_type = st.selectbox("Document Type", ["Plaint", "Written Statement", "Legal Notice", "Reply Notice",
+                                                   "Bail Application", "Consumer Complaint", "Divorce Petition",
+                                                   "Appeal", "Writ Petition", "IA Application", "Affidavit",
+                                                   "Execution Petition", "Other"])
+
+        draft = st.text_area("Paste Your Draft Here", height=400,
+                            placeholder="Paste the complete legal draft you want reviewed...")
+
+        if st.button("Review Draft", type="primary", use_container_width=True):
+            if not draft.strip():
+                st.error("Please paste your draft.")
+            else:
+                with st.spinner("Senior advocate reviewing your draft..."):
+                    result = review_draft(api_key, draft, doc_type)
+
+                if result.startswith("ERROR:"):
+                    st.error(result)
+                else:
+                    st.markdown("### Review Results")
+                    st.markdown(result)
+
+
+# ═══════════════════════════════════════════════
+# LEGAL DRAFTER (Prompt-based)
 # ═══════════════════════════════════════════════
 elif page == "Legal Drafter":
     st.markdown("## Legal Drafter")
