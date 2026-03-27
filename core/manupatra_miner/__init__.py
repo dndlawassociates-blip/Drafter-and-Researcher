@@ -36,6 +36,12 @@ from .citation import (
     normalize_court_name,
     detect_citation_type,
 )
+from .judgment_export import (
+    download_judgment,
+    export_judgment_pdf,
+    ensure_case_folder,
+    list_case_folders,
+)
 
 __all__ = [
     # Cache
@@ -47,4 +53,7 @@ __all__ = [
     # Citation
     "format_citation", "format_for_pleading", "format_for_argument",
     "normalize_court_name", "detect_citation_type",
+    # Judgment Export
+    "download_judgment", "export_judgment_pdf",
+    "ensure_case_folder", "list_case_folders",
 ]
