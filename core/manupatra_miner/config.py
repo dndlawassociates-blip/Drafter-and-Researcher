@@ -16,58 +16,145 @@ import os
 # ═══════════════════════════════════════════════════════════════
 
 BASE_URL = "https://www.manupatrafast.com"
-SEARCH_URL = f"{BASE_URL}/SearchResult/SearchResult.aspx"
-ADVANCED_SEARCH_URL = f"{BASE_URL}/Defaults/AdvancedSearch.aspx"
-HOME_URL = f"{BASE_URL}/"
+LOGIN_URL = f"{BASE_URL}/homepopup.aspx"
+HOME_URL = f"{BASE_URL}/pers/Personalized.aspx"
+MANU_SEARCH_URL = f"{BASE_URL}/ESP/ManuSearchFilter.aspx"
+LEGAL_SEARCH_URL = f"{BASE_URL}/Search/AdvanceSearch.aspx"
+CITATION_SEARCH_URL = f"{BASE_URL}/Search/CitationSearch.aspx"
+JUDGMENT_URL = f"{BASE_URL}/pers/viewdoc.aspx"
 
-# Alternative domains (Manupatra has multiple entry points)
+# Alternative domains (manupatrafast.com redirects from these)
 ALT_URLS = [
     "https://manupatra.com",
     "https://www.manupatra.com",
-    "https://manupatrafast.in",
+    "https://www.manupatra.ai",
 ]
 
 # ═══════════════════════════════════════════════════════════════
 # CSS SELECTORS (Calibrate during first live session)
 # ═══════════════════════════════════════════════════════════════
 
-SELECTOR_VERSION = "0.1-uncalibrated"
-SELECTOR_LAST_CALIBRATED = None  # Set to ISO date after first calibration
+SELECTOR_VERSION = "1.0-calibrated"
+SELECTOR_LAST_CALIBRATED = "2026-03-27"
+
+# ═══════════════════════════════════════════════════════════════
+# FRAME STRUCTURE (Critical — Manupatra uses nested framesets)
+# ═══════════════════════════════════════════════════════════════
+# Main frameset (Personalized.aspx):
+#   ├── frameheader  → phead.aspx (top nav bar: Home, Manu Search, Legal Search, Citation, etc.)
+#   ├── framesearch  → pMainBody.aspx (main area, ALSO a frameset!)
+#   │   ├── frametoc    → treeview/treeview.aspx (left sidebar: court/topic tree)
+#   │   ├── frametools  → pers/tools.aspx (toolbar above content)
+#   │   ├── framebody   → ESP/ManuSearchFilter.aspx (search form / results / judgment viewer)
+#   │   └── framenotepad → (empty)
+#   ├── framebottom  → pfoot.aspx (footer)
+#   └── framerefresh → refresh.aspx (session keepalive)
+#
+# KEY INSIGHT: The actual content (search form, results, judgments) is always in:
+#   window.frames['framesearch'].frames['framebody']
+# The framebody URL changes as user navigates:
+#   - Search form: ESP/ManuSearchFilter.aspx
+#   - Search results: SearchResult page
+#   - Judgment view: pers/viewdoc.aspx
+#
+# IMPORTANT: get_page_text and read_page DON'T work on framesets.
+# Use JavaScript to extract text from the inner frame:
+#   window.frames['framesearch'].frames['framebody'].document.body.innerText
+# Or navigate directly to the inner frame URL in a separate tab.
+
+FRAME_HIERARCHY = {
+    "header": "frameheader",       # phead.aspx
+    "search_area": "framesearch",  # pMainBody.aspx (contains nested frames)
+    "content": "framebody",        # The actual content frame (inside framesearch)
+    "toc": "frametoc",             # Left sidebar
+    "tools": "frametools",         # Toolbar
+}
+
+# JavaScript to extract text from the content frame (use with javascript_tool)
+JS_EXTRACT_TEXT = """
+try {
+    var sf = window.frames['framesearch'];
+    var bf = sf.frames['framebody'];
+    bf.document.body.innerText;
+} catch(e) { 'Error: ' + e.message; }
+"""
 
 SELECTORS = {
-    # ── Home / Search Page ──
-    "search_box": "input[type='text'][name*='search'], input[type='text'][name*='Search'], #txtSearch, #txtGlobalSearch",
-    "search_button": "input[type='submit'], button[type='submit'], #btnSearch, #btnGlobalSearch",
-    "login_indicator": ".user-name, .username, #lblUserName, .logged-in",
+    # ── Manu Search Page (ESP/ManuSearchFilter.aspx) ──
+    "search_box": "#txtSearchBox",
+    "search_button": "#btnSearch, p.btnsearch",
+    "search_type_dropdown": "#ddlSearchType",    # Free Text / Title / etc.
+    "exclude_words": "#txtNegativeSearch",
+    "refine_box": "#txtRefineBox",
+    "refine_type": "#ddlRefineType",
+    "login_indicator": "Welcome",                # Text on page after login
+
+    # Search In radio buttons
+    "radio_freetext": "#rbtfreetext",
+    "radio_title": "#rbttitle",
+    "radio_citation": "#rbtcitation",
+    "radio_exactphrase": "#rbtexactphrase",
+
+    # Boolean operations
+    "radio_bool_auto": "#rbtauto",
+    "radio_bool_and": "#rband",
+    "radio_bool_or": "#rbtor",
+
+    # ── Legal Search / Advanced Search (Search/AdvanceSearch.aspx) ──
+    "adv_appellant": "#txtAppellant",            # Appellant/Respondent name
+    "adv_judges": "#txtJudges",                  # Judge name
+    "adv_casenote": "#txtCaseNote",              # Case note text
+    "adv_subject": "#drpSubject",                # Subject dropdown
+    "adv_sub_subject": "#txtSubSubject",         # Sub-subject text
+    "adv_bool_type": "#ddlType",                 # Boolean type for sub-subject
+    "adv_case_category": "#CaseCategory",        # Case category dropdown
+    "adv_case_subcategory": "#CaseSubCategory",  # Case sub-category dropdown
+    "adv_disposition": "#drpDisposition",        # Disposition dropdown
+    "adv_date_on": "input[name='1'][value='on']",
+    "adv_date_range": "input[name='1'][value='range']",
+    "adv_search_type": "RadioButtonList1",       # Radio: 0=AdvSearch, 1=Section, 2=RelSection, 3=CaseNo, 4=Bench, 5=SearchByBench
+
+    # ── Citation Search (Search/CitationSearch.aspx) ──
+    "cit_publisher": "#drpPublisher",            # Publisher dropdown (SCC, AIR, etc.)
+    "cit_year": "#txtEnterYear",
+    "cit_volume": "#txtVolumeNumber",
+    "cit_page": "#txtPageNumber",
+    "cit_court": "#drpCourt",                    # Court dropdown
+    # Manu Citation tab
+    "cit_manu_publisher": "#drpPublishermanu",
+    "cit_manu_year": "#txtEnterYearmanu",
+    "cit_manu_volume": "#txtVolumeNumbermanu",
+    "cit_manu_page": "#txtPageNumbermanu",
 
     # ── Search Results Page ──
-    "result_container": ".search-result, .searchresult, .result-item, .search_result_row",
-    "result_title": ".search-result a, .result-title a, .searchresult a.case-link",
-    "result_citation": ".citation, .cite, .case-citation, span.citation",
-    "result_court": ".court-name, .court, span.court",
-    "result_date": ".decision-date, .date, span.date",
-    "result_snippet": ".snippet, .result-text, .search-snippet",
-    "result_link": ".search-result a[href], .result-title a[href]",
-    "pagination_next": ".next, .pagination a.next, a[title='Next']",
-    "total_results": ".result-count, .total-results, #lblTotalResults",
+    # Results load in framebody. Use JS_EXTRACT_TEXT to get text.
+    # Results are numbered: "1. Case Name (Date - Court)"
+    # Filter sidebar: Court, Keywords, Subject, Judge, Period, Document Type
 
-    # ── Judgment Detail Page ──
-    "judgment_full_text": "#divFullText, #divJudgment, .judgment-text, .full-text, #ContentPlaceHolder1_divContent",
-    "judgment_citation": ".case-citation, .judgment-citation, #lblCitation",
-    "judgment_court": ".court-name, .judgment-court, #lblCourt",
-    "judgment_bench": ".bench, .judges, .coram, #lblBench",
-    "judgment_date": ".judgment-date, .decided-on, #lblDate",
-    "judgment_parties": ".case-title, .parties, #lblParties",
-    "judgment_headnotes": ".headnote, .head-note, #divHeadNote",
-    "judgment_acts": ".acts-referred, .statutes, #divActsReferred",
-    "judgment_cases_cited": ".cases-referred, .cases-cited, #divCasesReferred",
+    # ── Judgment Detail Page (pers/viewdoc.aspx) ──
+    # Judgment text is in framebody. Use JS_EXTRACT_TEXT to get full text.
+    # Tabs visible at top: All, Subject, Coram, Casenote, Cases Referred,
+    #   Acts, Citing Reference, Status, Overruled/Reversed, References, Judgment
+    # Text structure (parsed by parser.py):
+    #   MANU/XX/NNNN/YYYY
+    #   Neutral Citation: ...
+    #   IN THE [COURT NAME]
+    #   [Case Number]
+    #   Decided On: DD.MM.YYYY
+    #   [Appellant] Vs. [Respondent]
+    #   Hon'ble Judges/Coram: ...
+    #   Subject: ...
+    #   Acts/Rules/Orders: ...
+    #   Cases Referred: ...
+    #   [JUDGMENT TEXT]
 
-    # ── Advanced Search Filters ──
-    "court_dropdown": "#ddlCourt, select[name*='Court'], select[name*='court']",
-    "year_from": "#txtYearFrom, input[name*='yearFrom'], input[name*='YearFrom']",
-    "year_to": "#txtYearTo, input[name*='yearTo'], input[name*='YearTo']",
-    "section_field": "#txtSection, input[name*='section'], input[name*='Section']",
-    "act_field": "#txtAct, input[name*='act'], input[name*='Act']",
+    # ── Header Navigation (phead.aspx) ──
+    "nav_home": "javascript:OpenWin('RedirectToManuSearch.aspx')",
+    "nav_manu_search": "javascript:OpenWin('RedirectToManuSearch.aspx')",
+    "nav_legal_search": "javascript:OpenWin('../Search/AdvanceSearch.aspx')",
+    "nav_citation": "javascript:OpenWin('../Search/CitationSearch.aspx')",
+    "nav_search_history": "javascript:OpenWin('../Search/SearchHistory.aspx')",
+    "nav_results": "Results",
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -183,40 +270,67 @@ CACHE_MAX_AGE_DAYS = 90  # Judgments don't change; 90-day cache is generous
 # ═══════════════════════════════════════════════════════════════
 
 MINING_WORKFLOW = """
-MANUPATRA CASE LAW MINING — CHROME WORKFLOW
+MANUPATRA CASE LAW MINING — CALIBRATED CHROME WORKFLOW (v1.0)
+
+CRITICAL: Manupatra uses NESTED FRAMESETS. Standard get_page_text and read_page
+DO NOT WORK on the main page. Use JavaScript extraction instead.
 
 Step 1: Navigate to Manupatra
-  → Use Chrome MCP: navigate(url="{base_url}")
-  → Verify login: use find("search") to locate search box
-  → If not logged in: inform user to log in first
+  → navigate(url="https://www.manupatrafast.com/pers/Personalized.aspx")
+  → Wait 2 seconds for frames to load
+  → Take screenshot to verify login (look for "Welcome [name]")
+  → If login page shown: inform user to log in manually (password required)
 
-Step 2: Search
-  → Use find("search box") to locate the search input
-  → Use form_input(ref=<ref>, value="{query}") to enter query
-  → Use computer(action="left_click", ref=<search_button>) to submit
-  → Use computer(action="wait", duration=3) for results to load
+Step 2: Search (Manu Search — main search box)
+  → Click on search box at approximate coordinates (center of "Enter Text" field)
+  → Type the search query: computer(action="type", text="{query}")
+  → Click the "Search" button (red button to the right)
+  → Wait 5 seconds for results to load
 
-Step 3: Extract Results
-  → Use get_page_text to extract the search results page
-  → Parse results to identify relevant cases
-  → Note citation, court, date for each result
+Step 3: Extract Results (from inner frame via JavaScript)
+  → Use javascript_tool to extract text from the content frame:
+    window.frames['framesearch'].frames['framebody'].document.body.innerText
+  → Parse the result list: numbered entries like "1. Case Name (Date - Court)"
+  → Note the filter sidebar for court/period/subject filtering
 
 Step 4: Open Judgment
-  → Use find("<case title>") to locate the result link
-  → Use computer(action="left_click", ref=<ref>) to open
-  → Use computer(action="wait", duration=3) for judgment to load
+  → Click on the case title link in the results (use coordinates from screenshot)
+  → Wait 4 seconds for judgment to load in framebody
 
-Step 5: Extract Judgment
-  → Use get_page_text to extract the full judgment text
-  → Parse: citation, court, bench, date, parties, headnotes, full text
+Step 5: Extract Full Judgment (via JavaScript)
+  → Use javascript_tool to extract from content frame:
+    window.frames['framesearch'].frames['framebody'].document.body.innerText
+  → The text follows this structure:
+    MANU/XX/NNNN/YYYY
+    Neutral Citation: ...
+    IN THE [COURT NAME]
+    [Case Number]
+    Decided On: DD.MM.YYYY
+    [Appellant] Vs. [Respondent]
+    Hon'ble Judges/Coram: [bench]
+    Subject: [subject]
+    Acts/Rules/Orders: [statutes list]
+    Cases Referred: [cited cases]
+    [JUDGMENT / ORDER text]
 
 Step 6: Cache
-  → Call manupatra_cache_judgment MCP tool with extracted data
+  → Call manupatra_cache_judgment MCP tool with parsed data
   → Judgment is now available offline via manupatra_search_cached
 
-Step 7: Report
-  → Present formatted citations to user
-  → Include relevant headnotes/ratio for the legal issue
+Step 7: Navigate Back to Results
+  → Click browser back or use the "Results" link in header nav
+  → Repeat Steps 4-6 for additional relevant judgments
+
+ALTERNATIVE: Legal Search (Advanced)
+  → Navigate to: https://www.manupatrafast.com/Search/AdvanceSearch.aspx
+  → This opens OUTSIDE frames — standard tools work here
+  → Fields: #txtAppellant, #txtJudges, #txtCaseNote, #drpSubject, etc.
+  → More precise than Manu Search for targeted case law mining
+
+ALTERNATIVE: Citation Search
+  → Navigate to: https://www.manupatrafast.com/Search/CitationSearch.aspx
+  → Fields: #drpPublisher (SCC/AIR/etc.), #txtEnterYear, #txtVolumeNumber, #txtPageNumber
+  → Use when you have a specific citation to look up
 """
 
 
